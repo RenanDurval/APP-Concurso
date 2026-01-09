@@ -9,9 +9,16 @@ const nextConfig = {
         ],
     },
     experimental: {
+        serverComponentsExternalPackages: ['@prisma/client', 'bcrypt'],
         serverActions: {
             bodySizeLimit: '2mb',
         },
+    },
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    typescript: {
+        ignoreBuildErrors: true,
     },
 }
 

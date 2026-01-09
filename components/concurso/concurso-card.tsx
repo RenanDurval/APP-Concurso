@@ -1,16 +1,18 @@
 import Link from 'next/link'
-import { MockConcurso } from '@/lib/data/mock-concursos'
+import { Concurso } from '@/types'
+import { formatCurrency, formatDate } from '@/lib/utils'
 
 interface ConcursoCardProps {
-    concurso: MockConcurso
+    concurso: Concurso
 }
 
 export function ConcursoCard({ concurso }: ConcursoCardProps) {
-    const statusColors = {
+    const statusColors: Record<string, string> = {
         aberto: 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300 border-success-200 dark:border-success-800',
         previsto: 'bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300 border-warning-200 dark:border-warning-800',
         encerrado: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
     }
+
 
     const statusLabels = {
         aberto: '🟢 Aberto',

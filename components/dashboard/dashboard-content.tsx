@@ -1,27 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { mockConcursos } from '@/lib/data/mock-concursos'
 import { SearchBar } from '@/components/concurso/search-bar'
 import { ConcursoCard } from '@/components/concurso/concurso-card'
+import { Concurso } from '@/types'
 
 interface DashboardContentProps {
     userName: string
     isPremium: boolean
+    concursos: Concurso[]
 }
 
-export function DashboardContent({ userName, isPremium }: DashboardContentProps) {
+export function DashboardContent({ userName, isPremium, concursos }: DashboardContentProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('todos')
 
     // Filtrar concursos
-    const filteredConcursos = mockConcursos.filter((concurso) => {
+    const filteredConcursos = concursos.filter((concurso) => {
         // Filtro de texto
         const matchesSearch =
             searchQuery === '' ||
             concurso.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
             concurso.orgao.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            concurso.cargo.toLowerCase().includes(searchQuery.toLowerCase())
+            (concurso.cargo?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 
         // Filtro de status
         const matchesStatus = statusFilter === 'todos' || concurso.status === statusFilter
@@ -29,8 +30,8 @@ export function DashboardContent({ userName, isPremium }: DashboardContentProps)
         return matchesSearch && matchesStatus
     })
 
-    const abertosCount = mockConcursos.filter((c) => c.status === 'aberto').length
-    const previstosCount = mockConcursos.filter((c) => c.status === 'previsto').length
+    const abertosCount = concursos.filter((c) => c.status === 'aberto').length
+    const previstosCount = concursos.filter((c) => c.status === 'previsto').length
 
     return (
         <div className="space-y-8">
@@ -51,7 +52,7 @@ export function DashboardContent({ userName, isPremium }: DashboardContentProps)
                     </div>
                     <div className="hidden md:block">
                         <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                            <p className="text-5xl font-bold">{mockConcursos.length}</p>
+                            <p className="text-5xl font-bold">{concursos.length}</p>
                             <p className="text-sm text-primary-100">Concursos disponíveis</p>
                         </div>
                     </div>

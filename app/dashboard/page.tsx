@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { DashboardContent } from '@/components/dashboard/dashboard-content'
 import Link from 'next/link'
+import prisma from '@/lib/db/prisma'
+import { Concurso } from '@/types'
 
 export default async function DashboardPage() {
     const session = await getSession()
@@ -16,6 +18,61 @@ export default async function DashboardPage() {
         email: 'demo@teste.com',
         isPremium: true
     }) as any
+
+    // Fetch Concursos do Supabase
+    let concursos: Concurso[] = []
+    let error = null
+
+    try {
+        const concursosRaw = await prisma.concurso.findMany({
+            include: {
+                editais: {
+                    include: {
+                        banca: true
+                    }
+                },
+                estatisticas: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+
+        // Adpater: Prisma -> Frontend Type
+        concursos = concursosRaw.map(c => {
+            const principalEdital = c.editais?.[0]
+            const estatistica = c.estatisticas?.[0]
+
+            return {
+                id: c.id,
+                nome: c.nome,
+                orgao: c.orgao,
+                cargo: c.cargo,
+                status: c.status,
+                numeroVagas: c.numeroVagas,
+                salario: c.salario ? Number(c.salario) : null,
+                nivelEscolaridade: c.nivelEscolaridade,
+                regiaoAbrangencia: c.regiaoAbrangencia,
+                dataInscricaoFim: principalEdital?.dataInscricaoFim?.toISOString() || null,
+                banca: principalEdital?.banca?.nome || null,
+                inscritosPorVaga: estatistica?.inscritosPorVaga ? Number(estatistica.inscritosPorVaga) : null
+            }
+        })
+    } catch (e: any) {
+        console.error('Dashboard Error:', e)
+        error = e.message
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 text-center">
+                <h1 className="text-2xl font-bold text-red-600 mb-4">Erro ao carregar dados</h1>
+                <pre className="text-left bg-gray-100 p-4 rounded overflow-auto text-sm text-red-800">
+                    {error}
+                </pre>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
@@ -59,8 +116,9 @@ export default async function DashboardPage() {
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
                 <DashboardContent
-                    userName={user.name?.split(' ')[0] || 'Usuário'}
-                    isPremium={user.isPremium || false}
+                    userName={user.name || 'Concurseiro'}
+                    isPremium={user.isPremium}
+                    concursos={concursos}
                 />
             </main>
 

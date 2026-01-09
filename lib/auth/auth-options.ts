@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import GithubProvider from 'next-auth/providers/github'
 import { compare } from 'bcryptjs'
-// import prisma from '@/lib/db/prisma'
+import prisma from '@/lib/db/prisma'
 
 export const authOptions: AuthOptions = {
     session: {
@@ -34,36 +34,18 @@ export const authOptions: AuthOptions = {
                     throw new Error('Email e senha são obrigatórios')
                 }
 
-                // MOCK AUTH FOR DEVELOPMENT WITHOUT DB
-                if (credentials.email) {
-                    return {
-                        id: 'mock-user-id',
-                        email: credentials.email,
-                        name: 'Usuário Web',
-                        image: null,
-                        isPremium: true,
-                        password: '' // Not needed for mock
-                    }
-                }
-
-                /* 
                 const user = await prisma.user.findUnique({
-                    where: {
-                        email: credentials.email,
-                    },
-                    include: {
-                        subscription: true,
-                    },
+                    where: { email: credentials.email }
                 })
 
-                if (!user) {
-                    throw new Error('Credenciais inválidas')
+                if (!user || !user.password) {
+                    throw new Error('Email não cadastrado')
                 }
 
                 const isPasswordValid = await compare(credentials.password, user.password)
 
                 if (!isPasswordValid) {
-                    throw new Error('Credenciais inválidas')
+                    throw new Error('Senha incorreta')
                 }
 
                 return {
@@ -71,12 +53,9 @@ export const authOptions: AuthOptions = {
                     email: user.email,
                     name: user.name,
                     image: user.image,
-                    isPremium: user.isPremium,
                 }
-                */
-                return null
-            },
-        }),
+            }
+        })
     ],
     callbacks: {
         async jwt({ token, user }) {
