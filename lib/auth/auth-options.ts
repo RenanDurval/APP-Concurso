@@ -1,7 +1,9 @@
 import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
+import GithubProvider from 'next-auth/providers/github'
 import { compare } from 'bcryptjs'
-import prisma from '@/lib/db/prisma'
+// import prisma from '@/lib/db/prisma'
 
 export const authOptions: AuthOptions = {
     session: {
@@ -13,6 +15,14 @@ export const authOptions: AuthOptions = {
         error: '/login',
     },
     providers: [
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID || '',
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        }),
+        GithubProvider({
+            clientId: process.env.GITHUB_ID || '',
+            clientSecret: process.env.GITHUB_SECRET || '',
+        }),
         CredentialsProvider({
             name: 'Credentials',
             credentials: {
@@ -24,6 +34,19 @@ export const authOptions: AuthOptions = {
                     throw new Error('Email e senha são obrigatórios')
                 }
 
+                // MOCK AUTH FOR DEVELOPMENT WITHOUT DB
+                if (credentials.email) {
+                    return {
+                        id: 'mock-user-id',
+                        email: credentials.email,
+                        name: 'Usuário Web',
+                        image: null,
+                        isPremium: true,
+                        password: '' // Not needed for mock
+                    }
+                }
+
+                /* 
                 const user = await prisma.user.findUnique({
                     where: {
                         email: credentials.email,
@@ -50,6 +73,8 @@ export const authOptions: AuthOptions = {
                     image: user.image,
                     isPremium: user.isPremium,
                 }
+                */
+                return null
             },
         }),
     ],

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { SocialAuth } from '@/components/auth/social-login'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -102,6 +103,8 @@ export default function LoginPage() {
                             Entrar
                         </Button>
                     </form>
+
+                    <SocialAuth />
 
                     {/* Divider */}
                     <div className="relative my-6">
