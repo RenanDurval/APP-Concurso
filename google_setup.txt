@@ -1,0 +1,23 @@
+LINKS DE REDIRECIONAMENTO (REDIRECT URIS) PARA O GOOGLE CLOUD:
+
+1. Link de Desenvolvimento (IMPORTANTE):
+http://localhost:3000/api/auth/callback/google
+
+2. Link de Produção (IMPORTANTE):
+https://app-concursos.vercel.app/api/auth/callback/google
+
+---------------------------------------------------------
+COMO CONFIGURAR:
+1. Acesse: https://console.cloud.google.com/apis/credentials
+2. Clique no ícone de "Lápis" ao lado do seu "OAuth 2.0 Client ID".
+3. Role até "URIs de redirecionamento autorizados" (Authorized redirect URIs).
+4. Clique em "Adicionar URI".
+5. Cole o Link 1.
+6. Clique em "Adicionar URI" novamente.
+7. Cole o Link 2.
+8. Clique em SALVAR.
+---------------------------------------------------------
+
+POR QUE ISSO É NECESSÁRIO?
+O Google bloqueia qualquer login que não venha de um endereço explicitamente autorizado por você.
+Como eu (IA) não tenho acesso à sua conta do Google, você precisa fazer essa etapa manualmente.

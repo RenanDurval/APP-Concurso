@@ -20,16 +20,18 @@ export function ConcursoCard({ concurso }: ConcursoCardProps) {
         encerrado: '⚫ Encerrado',
     }
 
-    const formatCurrency = (value: number) => {
+    const formatCurrency = (value: number | null) => {
+        if (!value) return 'A definir'
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL',
         }).format(value)
     }
 
-    const formatDate = (date: Date | null) => {
+    const formatDate = (date: string | Date | null) => {
         if (!date) return 'A definir'
-        return new Intl.DateTimeFormat('pt-BR').format(date)
+        const dateObj = typeof date === 'string' ? new Date(date) : date
+        return new Intl.DateTimeFormat('pt-BR').format(dateObj)
     }
 
     return (
