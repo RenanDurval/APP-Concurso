@@ -1,0 +1,281 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USER MANAGEMENT
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  isPremium     Boolean   @default(false)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  subscription  Subscription?
+  progress      UserProgress[]
+  searches      SavedSearch[]
+  
+  @@map("users")
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  status            String   // 'active', 'canceled', 'expired'
+  startDate         DateTime
+  endDate           DateTime?
+  isLifetime        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ============================================
+// CONCURSOS & EDITAIS
+// ============================================
+
+model Concurso {
+  id                String    @id @default(cuid())
+  nome              String
+  orgao             String
+  cargo             String?
+  descricao         String?   @db.Text
+  status            String    // 'aberto', 'previsto', 'encerrado'
+  nivelEscolaridade String?   // 'fundamental', 'medio', 'superior'
+  regiaoAbrangencia String?   // 'municipal', 'estadual', 'federal'
+  numeroVagas       Int?
+  salario           Decimal?  @db.Decimal(10, 2)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  editais           Edital[]
+  estatisticas      Estatistica[]
+  searches          SavedSearch[]
+
+  @@index([status])
+  @@index([orgao])
+  @@map("concursos")
+}
+
+model Edital {
+  id                String    @id @default(cuid())
+  concursoId        String
+  bancaId           String
+  numeroEdital      String
+  dataPublicacao    DateTime
+  dataInscricaoInicio DateTime?
+  dataInscricaoFim  DateTime?
+  dataProva         DateTime?
+  dataResultado     DateTime?
+  linkEdital        String    @db.Text
+  linkInscricao     String?   @db.Text
+  conteudoTexto     String?   @db.Text // Texto extraído do PDF
+  resumoIA          String?   @db.Text // Resumo gerado pela IA
+  isAtivo           Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  concurso          Concurso  @relation(fields: [concursoId], references: [id], onDelete: Cascade)
+  banca             Banca     @relation(fields: [bancaId], references: [id])
+  provas            Prova[]
+  cronograma        Cronograma[]
+
+  @@index([concursoId])
+  @@index([bancaId])
+  @@index([dataPublicacao])
+  @@map("editais")
+}
+
+model Cronograma {
+  id          String   @id @default(cuid())
+  editalId    String
+  descricao   String
+  dataEvento  DateTime
+  tipo        String   // 'inscricao', 'prova', 'resultado', 'recurso', 'convocacao'
+  createdAt   DateTime @default(now())
+
+  // Relations
+  edital      Edital   @relation(fields: [editalId], references: [id], onDelete: Cascade)
+
+  @@index([editalId])
+  @@map("cronogramas")
+}
+
+// ============================================
+// BANCAS EXAMINADORAS
+// ============================================
+
+model Banca {
+  id                  String   @id @default(cuid())
+  nome                String   @unique
+  descricao           String?  @db.Text
+  site                String?
+  caracteristicas     String?  @db.Text // JSON com padrões identificados
+  materiasFrequentes  String?  @db.Text // JSON com array de matérias
+  estiloQuestoes      String?  @db.Text // Análise do estilo (discursiva, objetiva, etc)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  editais             Edital[]
+  provas              Prova[]
+  analises            BancaAnalise[]
+
+  @@map("bancas")
+}
+
+model BancaAnalise {
+  id                    String   @id @default(cuid())
+  bancaId               String
+  concursosTotais       Int      @default(0)
+  materiasComuns        String?  @db.Text // JSON
+  dificuldadeMedia      Decimal? @db.Decimal(3, 2) // 0.00 a 10.00
+  porcentagemObjetivas  Decimal? @db.Decimal(5, 2)
+  porcentagemDiscursivas Decimal? @db.Decimal(5, 2)
+  observacoes           String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  banca                 Banca    @relation(fields: [bancaId], references: [id], onDelete: Cascade)
+
+  @@index([bancaId])
+  @@map("banca_analises")
+}
+
+// ============================================
+// PROVAS & QUESTÕES
+// ============================================
+
+model Prova {
+  id            String   @id @default(cuid())
+  editalId      String
+  bancaId       String
+  cargo         String?
+  dataProva     DateTime
+  tipo          String   // 'objetiva', 'discursiva', 'redacao', 'pratica'
+  linkProva     String?  @db.Text
+  linkGabarito  String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  edital        Edital   @relation(fields: [editalId], references: [id], onDelete: Cascade)
+  banca         Banca    @relation(fields: [bancaId], references: [id])
+  questoes      Questao[]
+
+  @@index([editalId])
+  @@index([bancaId])
+  @@map("provas")
+}
+
+model Questao {
+  id              String   @id @default(cuid())
+  provaId         String?  // Null se for questão gerada por IA
+  materia         String
+  assunto         String?
+  enunciado       String   @db.Text
+  alternativaA    String?  @db.Text
+  alternativaB    String?  @db.Text
+  alternativaC    String?  @db.Text
+  alternativaD    String?  @db.Text
+  alternativaE    String?  @db.Text
+  respostaCorreta String?  // 'A', 'B', 'C', 'D', 'E'
+  explicacao      String?  @db.Text
+  dificuldade     String?  // 'facil', 'media', 'dificil'
+  isGeradaPorIA   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  prova           Prova?   @relation(fields: [provaId], references: [id], onDelete: SetNull)
+  respostas       UserProgress[]
+
+  @@index([provaId])
+  @@index([materia])
+  @@map("questoes")
+}
+
+// ============================================
+// ESTATÍSTICAS
+// ============================================
+
+model Estatistica {
+  id                  String   @id @default(cuid())
+  concursoId          String
+  anoReferencia       Int
+  totalInscritos      Int?
+  totalVagas          Int?
+  inscritosPorVaga    Decimal? @db.Decimal(10, 2)
+  notaCorteObjetiva   Decimal? @db.Decimal(5, 2)
+  notaCorteDiscursiva Decimal? @db.Decimal(5, 2)
+  maiorNota           Decimal? @db.Decimal(5, 2)
+  menorNota           Decimal? @db.Decimal(5, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  concurso            Concurso @relation(fields: [concursoId], references: [id], onDelete: Cascade)
+
+  @@unique([concursoId, anoReferencia])
+  @@index([concursoId])
+  @@map("estatisticas")
+}
+
+// ============================================
+// PROGRESSO DO USUÁRIO
+// ============================================
+
+model UserProgress {
+  id              String    @id @default(cuid())
+  userId          String
+  questaoId       String
+  respostaUsuario String?   // 'A', 'B', 'C', 'D', 'E'
+  acertou         Boolean
+  tempoResposta   Int?      // em segundos
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questao         Questao   @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questaoId])
+  @@index([userId])
+  @@map("user_progress")
+}
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  userId      String
+  concursoId  String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concurso    Concurso @relation(fields: [concursoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, concursoId])
+  @@index([userId])
+  @@map("saved_searches")
+}
