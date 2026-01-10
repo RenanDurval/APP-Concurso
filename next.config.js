@@ -9,7 +9,7 @@ const nextConfig = {
         ],
     },
     experimental: {
-        serverComponentsExternalPackages: ['@prisma/client', 'bcrypt'],
+        serverComponentsExternalPackages: ['@prisma/client'],
         serverActions: {
             bodySizeLimit: '2mb',
         },
@@ -22,4 +22,4 @@ const nextConfig = {
     },
 }
 
-export default nextConfig
+module.exports = nextConfig

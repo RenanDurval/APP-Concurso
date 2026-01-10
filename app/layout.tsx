@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SessionProvider } from "@/components/auth/session-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ToastProvider } from "@/components/ui/use-toast";
 
 export const metadata: Metadata = {
     title: "App de Concursos - Sua Aprovação Começa Aqui",
@@ -26,7 +27,9 @@ export default function RootLayout({
             <body className="antialiased">
                 <ThemeProvider>
                     <SessionProvider>
-                        {children}
+                        <ToastProvider>
+                            {children}
+                        </ToastProvider>
                     </SessionProvider>
                 </ThemeProvider>
             </body>

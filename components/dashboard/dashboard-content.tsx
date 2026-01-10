@@ -5,13 +5,37 @@ import { SearchBar } from '@/components/concurso/search-bar'
 import { ConcursoCard } from '@/components/concurso/concurso-card'
 import { Concurso } from '@/types'
 
+import { OverviewChart } from "@/components/dashboard/overview-chart"
+import { RecentActivity } from "@/components/dashboard/recent-activity"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 interface DashboardContentProps {
     userName: string
     isPremium: boolean
     concursos: Concurso[]
+    stats?: {
+        questoesFeitas: number
+        taxaAcerto: number
+        concursosAbertos: number
+        concursosPrevistos: number
+    },
+    recentActivity?: any[],
+    weeklyChart?: any[]
 }
 
-export function DashboardContent({ userName, isPremium, concursos }: DashboardContentProps) {
+export function DashboardContent({
+    userName,
+    isPremium,
+    concursos,
+    stats = {
+        questoesFeitas: 0,
+        taxaAcerto: 0,
+        concursosAbertos: 0,
+        concursosPrevistos: 0
+    },
+    recentActivity = [],
+    weeklyChart = []
+}: DashboardContentProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('todos')
 
@@ -30,72 +54,143 @@ export function DashboardContent({ userName, isPremium, concursos }: DashboardCo
         return matchesSearch && matchesStatus
     })
 
-    const abertosCount = concursos.filter((c) => c.status === 'aberto').length
-    const previstosCount = concursos.filter((c) => c.status === 'previsto').length
-
     return (
         <div className="space-y-8">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-2xl p-8 text-white">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">
-                            Bem-vindo, {userName}! 👋
-                        </h1>
-                        <p className="text-primary-100 text-lg">
-                            {isPremium ? (
-                                <>⭐ Você é Premium! Aproveite todos os recursos</>
-                            ) : (
-                                <>Explore concursos e turbine seus estudos</>
-                            )}
-                        </p>
-                    </div>
-                    <div className="hidden md:block">
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                            <p className="text-5xl font-bold">{concursos.length}</p>
-                            <p className="text-sm text-primary-100">Concursos disponíveis</p>
-                        </div>
-                    </div>
+            <div className="flex items-center justify-between space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+                <div className="flex items-center space-x-2">
+                    <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary hover:bg-primary/90 h-10 py-2 px-4 shadow">
+                        Download Relatório
+                    </button>
                 </div>
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-xl p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-success-600 rounded-lg flex items-center justify-center text-white text-2xl">
-                            🟢
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-success-700 dark:text-success-300">{abertosCount}</p>
-                            <p className="text-sm text-success-600 dark:text-success-400">Concursos Abertos</p>
-                        </div>
-                    </div>
-                </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Concursos Abertos
+                        </CardTitle>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-muted-foreground"
+                        >
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.concursosAbertos}</div>
+                        <p className="text-xs text-muted-foreground">
+                            +2 desde o mês passado
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Concursos Previstos
+                        </CardTitle>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-muted-foreground"
+                        >
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.concursosPrevistos}</div>
+                        <p className="text-xs text-muted-foreground">
+                            +18% em relação ao mês passado
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Questões Feitas</CardTitle>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-muted-foreground"
+                        >
+                            <rect width="20" height="14" x="2" y="5" rx="2" />
+                            <path d="M2 10h20" />
+                        </svg>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.questoesFeitas}</div>
+                        <p className="text-xs text-muted-foreground">
+                            +19% em relação à semana passada
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Taxa de Acerto
+                        </CardTitle>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            className="h-4 w-4 text-muted-foreground"
+                        >
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.taxaAcerto}%</div>
+                        <p className="text-xs text-muted-foreground">
+                            +2.1% desde a última hora
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
-                <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-xl p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-warning-600 rounded-lg flex items-center justify-center text-white text-2xl">
-                            🟡
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-warning-700 dark:text-warning-300">{previstosCount}</p>
-                            <p className="text-sm text-warning-600 dark:text-warning-400">Previstos</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white text-2xl">
-                            💡
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">0</p>
-                            <p className="text-sm text-primary-600 dark:text-primary-400">Questões Praticadas</p>
-                        </div>
-                    </div>
-                </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="col-span-4">
+                    <CardHeader>
+                        <CardTitle>Desempenho Semanal</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <OverviewChart data={weeklyChart} />
+                    </CardContent>
+                </Card>
+                <Card className="col-span-3">
+                    <CardHeader>
+                        <CardTitle>Atividade Recente</CardTitle>
+                        <CardDescription>
+                            Você fez {recentActivity.length} questões recentemente.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <RecentActivity activities={recentActivity} />
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Search Bar */}

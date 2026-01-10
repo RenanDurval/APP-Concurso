@@ -1,9 +1,10 @@
 import { getSession } from '@/lib/auth/session'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import Link from 'next/link'
-import { mockConcursos } from '@/lib/data/mock-concursos'
-import { Button } from '@/components/ui/button'
+import prisma from '@/lib/db/prisma'
+import { BancaAnalyzer } from '@/components/ai/banca-analyzer'
+import { QuestionGenerator } from '@/components/ai/question-generator'
 
 export default async function ConcursoDetailPage({
     params,
@@ -12,20 +13,43 @@ export default async function ConcursoDetailPage({
 }) {
     const session = await getSession()
 
-    // if (!session) {
-    //     redirect('/login')
-    // }
-
     const user = (session?.user || {
         name: 'Usuário Demo',
         email: 'demo@teste.com',
         isPremium: true
     }) as any
 
-    const concurso = mockConcursos.find((c) => c.id === params.id)
+    const concursoRaw = await prisma.concurso.findUnique({
+        where: { id: params.id },
+        include: {
+            editais: {
+                include: { banca: true }
+            },
+            estatisticas: true
+        }
+    })
 
-    if (!concurso) {
+    if (!concursoRaw) {
         notFound()
+    }
+
+    // Adapter for UI
+    const principalEdital = concursoRaw.editais?.[0]
+    const estatistica = concursoRaw.estatisticas?.[0]
+
+    const concurso = {
+        id: concursoRaw.id,
+        nome: concursoRaw.nome,
+        orgao: concursoRaw.orgao,
+        cargo: concursoRaw.cargo,
+        status: concursoRaw.status,
+        numeroVagas: concursoRaw.numeroVagas,
+        salario: concursoRaw.salario ? Number(concursoRaw.salario) : 0,
+        nivelEscolaridade: concursoRaw.nivelEscolaridade,
+        regiaoAbrangencia: concursoRaw.regiaoAbrangencia,
+        dataInscricaoFim: principalEdital?.dataInscricaoFim || null,
+        banca: principalEdital?.banca?.nome || 'A definir',
+        inscritosPorVaga: estatistica?.inscritosPorVaga ? Number(estatistica.inscritosPorVaga) : null
     }
 
     const formatCurrency = (value: number) => {
@@ -39,8 +63,6 @@ export default async function ConcursoDetailPage({
         if (!date) return 'A definir'
         return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(date)
     }
-
-    // const user = session.user as any // Removed duplicate
 
     const statusColors = {
         aberto: 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300',
@@ -153,29 +175,13 @@ export default async function ConcursoDetailPage({
                         </div>
                     </div>
 
-                    {/* Funcionalidades Premium */}
-                    <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-2xl p-8 text-white mb-8">
-                        <h2 className="text-2xl font-bold mb-4">🚀 Recursos Disponíveis</h2>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <h3 className="font-semibold mb-2">📊 Análise da Banca</h3>
-                                <p className="text-sm text-primary-100 mb-3">
-                                    Veja como a {concurso.banca} costuma cobrar nas provas
-                                </p>
-                                <Button variant={user.isPremium ? "secondary" : "outline"} size="sm">
-                                    {user.isPremium ? 'Ver Análise' : '⭐ Premium'}
-                                </Button>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <h3 className="font-semibold mb-2">💡 Questões com IA</h3>
-                                <p className="text-sm text-primary-100 mb-3">
-                                    Pratique com questões geradas especificamente para esta banca
-                                </p>
-                                <Button variant={user.isPremium ? "secondary" : "outline"} size="sm">
-                                    {user.isPremium ? 'Praticar' : '⭐ Premium'}
-                                </Button>
-                            </div>
-                        </div>
+                    {/* Funcionalidades Premium - AI Integration */}
+                    <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <BancaAnalyzer banca={concurso.banca} />
+                        <QuestionGenerator
+                            banca={concurso.banca}
+                            cargo={concurso.cargo || 'Geral'}
+                        />
                     </div>
 
                     {/* Edital em breve */}
